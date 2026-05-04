@@ -1,0 +1,26 @@
+services:
+  ac-database:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    command:
+      - --innodb-buffer-pool-size=512M
+      - --max-connections=100
+
+  ac-worldserver:
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+    depends_on:
+      ac-database:
+        condition: service_healthy
+      ac-db-import:
+        condition: service_completed_successfully
+
+  ac-authserver:
+    deploy:
+      resources:
+        limits:
+          memory: 256M

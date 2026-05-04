@@ -1,0 +1,69 @@
+From: wow-steam-deck setup
+Subject: [PATCH] Fix ARG propagation in per-app Docker stages
+
+In the playerbots fork's apps/docker/Dockerfile the runtime stage declares
+USER_ID / GROUP_ID / DOCKER_USER, but the child stages (authserver,
+worldserver, db-import, client-data, tools) reference these ARGs without
+re-declaring them. Buildah treats them as empty, which fails the
+`COPY --chown=$DOCKER_USER:$DOCKER_USER ...` step:
+
+    Error: looking up UID/GID for ":": can't find uid for user :
+
+Re-declare the ARGs at the top of every child stage. Default values match
+what compose passes via build-args, so the build also works without a .env.
+
+--- a/apps/docker/Dockerfile
++++ b/apps/docker/Dockerfile
+@@ -149,6 +149,9 @@ ENTRYPOINT ["/usr/bin/env", "bash", "/azerothcore/entrypoint.sh"]
+
+ FROM runtime AS authserver
+ LABEL description="AzerothCore Auth Server"
++ARG USER_ID=1000
++ARG GROUP_ID=1000
++ARG DOCKER_USER=acore
+
+ ENV ACORE_COMPONENT=authserver
+
+@@ -170,6 +173,9 @@ CMD ["authserver"]
+
+ FROM runtime AS worldserver
+
++ARG USER_ID=1000
++ARG GROUP_ID=1000
++ARG DOCKER_USER=acore
+ LABEL description="AzerothCore World Server"
+
+ ENV ACORE_COMPONENT=worldserver
+
+@@ -193,6 +199,9 @@ CMD ["worldserver"]
+
+ FROM runtime AS db-import
+
++ARG USER_ID=1000
++ARG GROUP_ID=1000
++ARG DOCKER_USER=acore
+ LABEL description="AzerothCore Database Import tool"
+
+ USER $DOCKER_USER
+
+@@ -217,6 +226,9 @@ CMD [ "/azerothcore/env/dist/bin/dbimport" ]
+
+ FROM skeleton AS client-data
+
++ARG USER_ID=1000
++ARG GROUP_ID=1000
++ARG DOCKER_USER=acore
+ LABEL description="AzerothCore client-data"
+
+ ENV DATAPATH=/azerothcore/env/dist/data
+
+@@ -239,6 +251,9 @@ CMD ["bash",  "-c", "source /azerothcore/apps/installer/includes/functions.sh &&
+
+ FROM runtime AS tools
+
++ARG USER_ID=1000
++ARG GROUP_ID=1000
++ARG DOCKER_USER=acore
+ LABEL description="AzerothCore Tools"
+
+ WORKDIR /azerothcore/env/dist/

@@ -1,0 +1,10 @@
+.env
+*.bak
+*.original.md
+
+.claude/
+.omc/
+.omx/
+.venv/
+__pycache__/
+*.pyc
