@@ -12,6 +12,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export DECK_LOCAL=1
+
+# Capture everything to a log so Steam-launched failures are debuggable.
+exec > >(tee -a /tmp/wow.log) 2>&1
+echo "=== wow.sh start $(date '+%F %T') PPID=$PPID ==="
+echo "ENV: DISPLAY=${DISPLAY:-} XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-} XAUTHORITY=${XAUTHORITY:-}"
+echo "ENV: SteamAppId=${SteamAppId:-} SteamGameId=${SteamGameId:-}"
+
 # shellcheck disable=SC1091
 source "$REPO_ROOT/scripts/lib/common.sh"
 
