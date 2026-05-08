@@ -11,7 +11,6 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 CORE_DIR="$WOW_ROOT/server/ac"
 DOCKERFILE="$CORE_DIR/apps/docker/Dockerfile"
-COMPOSE="$CORE_DIR/docker-compose.yml"
 
 log "Patching Dockerfile (ARG propagation in per-app stages)..."
 # Idempotence: original Dockerfile has 1 occurrence of ARG DOCKER_USER=acore
