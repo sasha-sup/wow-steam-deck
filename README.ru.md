@@ -127,6 +127,7 @@ scripts/07-init-db.sh            # mariadb + db-import
 scripts/08-start-stack.sh        # auth + world
 scripts/09-create-account.sh test test 3   # GM-аккаунт test/test
 scripts/10-install-lutris.sh     # Lutris flatpak + realmlist.wtf
+scripts/11-apply-rates.sh        # опционально: kayf-пресет (x5 XP, x3 таланты, буст лута)
 ```
 
 Итого ~3-5 часов. Львиную долю занимают разовая сборка и экстракция данных.
@@ -137,29 +138,47 @@ scripts/10-install-lutris.sh     # Lutris flatpak + realmlist.wtf
 Запусти `scripts/10-install-lutris.sh` — поставит Lutris flatpak (с Wine
 внутри) и пропишет `realmlist.wtf` на `127.0.0.1` во всех локалях.
 
-#### Универсальный лаунчер: `scripts/wow.sh`
+#### Лаунчер сервера: `scripts/wow.sh`
 
 Запускается на самой Деке (клонируй репо на Деку, например в
-`~/wow-steam-deck`). Поднимает стек + клиент:
+`~/wow-steam-deck`). Поднимает только серверный стек — клиент отдельно
+через Steam:
 
 ```bash
 ~/wow-steam-deck/scripts/wow.sh
 ```
 
-#### Steam Gaming Mode (рекомендуемо — Steam виртуальная клавиатура работает)
+Идемпотентно — повторный запуск ничего не делает если стек уже поднят.
+Можно добавить в KDE автостарт чтоб сервер поднимался при входе в
+Desktop Mode.
+
+Дополнительно есть алиасы (см. секцию ниже): `wow` / `wowstop` / `wowstatus`
+/ `wowlogs` для быстрого управления из любого терминала.
+
+#### Клиент через Steam (Proton)
 
 1. Desktop Mode → открой Steam → **Games → Add a Non-Steam Game to My Library**.
 2. **Browse** → переключи фильтр "All Files" → выбери
-   `~/wow-steam-deck/scripts/wow.sh` → Add.
-3. Правой кнопкой → **Properties** → переименуй в "WoW 3.3.5a", поставь иконку.
-   **Не** включай Proton compat tool — `wow.sh` это Linux-скрипт, он сам
-   оборачивает Wine.
-4. Switch to Gaming Mode. Library → "WoW 3.3.5a" → Play.
-5. **Steam кнопка + X** — экранная клавиатура для логина.
+   `$WOW_ROOT/client/Wow.exe` → Add.
+3. Правой кнопкой → **Properties** → переименуй в "WoW 3.3.5a", в
+   **Compatibility** включи свежий Proton (Proton Experimental ок).
+4. Убедись что сервер поднят (`scripts/wow.sh` один раз на Деке).
+5. Switch to Gaming Mode. Library → "WoW 3.3.5a" → Play.
+6. **Steam кнопка + X** — экранная клавиатура для логина.
 
-> Почему не `Wow.exe` напрямую с Proton? Получишь клаву, но Proton создаст
-> свой prefix и потеряется хук старта сервера. `wow.sh` склеивает стек и
-> клиент в одну кнопку.
+> Wow.exe под Proton видит `127.0.0.1` на самой Деке, поэтому `realmlist.wtf`,
+> прописанный `10-install-lutris.sh`, продолжает работать без правок.
+
+#### Алиасы для shell
+
+`scripts/setup-aliases.sh` добавляет в `~/.bashrc` на Деке короткие команды:
+
+```bash
+wow         # старт сервера (== scripts/wow.sh)
+wowstop     # остановить контейнеры
+wowstatus   # podman ps
+wowlogs     # tail логов worldserver
+```
 
 ## Тюнинг под Деку
 

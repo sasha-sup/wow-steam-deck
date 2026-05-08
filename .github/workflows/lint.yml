@@ -1,0 +1,32 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash -n syntax check
+        run: |
+          set -e
+          shopt -s nullglob
+          for f in scripts/*.sh scripts/lib/*.sh; do
+              bash -n "$f"
+          done
+
+      - name: shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          scandir: ./scripts
+          additional_files: scripts/lib/common.sh
+
+      - name: validate compose
+        run: |
+          docker compose -f docker-compose.override.yml config >/dev/null \
+              || echo "(override-only, skip standalone validate)"

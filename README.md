@@ -49,10 +49,45 @@ world.
     ├── 08-start-stack.sh          # auth + world + db (rootless, port-bound)
     ├── 09-create-account.sh       # GM account via worldserver console
     ├── 10-install-lutris.sh       # Lutris flatpak + realmlist.wtf pinning
-    ├── wow.sh                     # universal launcher (stack + client)
+    ├── 11-apply-rates.sh          # optional: x5 XP / x3 talents / boosted drops
+    ├── setup-all.sh               # master runner — sequences 00→11 with checkpoints
+    ├── update.sh                  # AC fork pull + rebuild + db migrate
+    ├── backup.sh / restore.sh     # mysqldump → tar.zst, restore from archive
+    ├── install-autostart.sh       # systemd --user wow-server.service + linger
+    ├── install-watchdog.sh        # 1-min port watchdog + daily DB backup timer
+    ├── install-logrotate.sh       # rotate Server.log/Auth.log daily
+    ├── install-sudoers-hook.sh    # detect missing NOPASSWD + wow-fix-sudoers helper
+    ├── add-steam-shortcut.sh      # add Wow.exe to shortcuts.vdf with Proton compat
+    ├── install-gaming-launcher.sh # wires autostart + watchdog + logs + shortcut
+    ├── wow.sh / wow-play.sh       # server-only launcher / desktop-mode play wrapper
+    ├── setup-aliases.sh           # install `wow` / `wowstop` / `wowstatus` shell aliases
     ├── stop.sh / status.sh
     └── lib/common.sh
 ```
+
+## One-shot install
+
+For an opinionated full setup (after step 4 NOPASSWD + step 7 client copy):
+
+```bash
+scripts/setup-all.sh                       # sequences 00→11 with checkpoints
+scripts/install-gaming-launcher.sh         # autostart + watchdog + logrotate + Steam shortcut
+```
+
+`setup-all.sh` skips already-completed steps via `.omc/state/setup.json`. Use
+`--from 04` to redo from a step, `--reset` to clear, `--dry-run` to preview.
+
+## Day-2 ops
+
+| Task | Command |
+|------|---------|
+| Update AC + modules | `scripts/update.sh` (auto-backups before touching) |
+| Manual DB backup | `scripts/backup.sh` (or `--quick`) |
+| Restore | `scripts/restore.sh --latest` |
+| Add Wow.exe to Steam | `scripts/add-steam-shortcut.sh` (close Steam first) |
+| Recover after SteamOS update | `wow-fix-sudoers` (installed by `install-sudoers-hook.sh`) |
+| Logs rotation | `install-logrotate.sh` once; runs daily 04:30 |
+| Server autostart at boot | `install-autostart.sh` once; `systemctl --user start wow-server` |
 
 ## Walkthrough
 
@@ -149,6 +184,7 @@ scripts/07-init-db.sh            # mariadb + db-import
 scripts/08-start-stack.sh        # auth + world
 scripts/09-create-account.sh test test 3   # GM-level test/test
 scripts/10-install-lutris.sh     # Lutris flatpak + realmlist.wtf
+scripts/11-apply-rates.sh        # optional: kayf preset (x5 XP, x3 talents, boosted drops)
 ```
 
 Total wall time: \~3-5 hours, dominated by the build (1×) and the data
@@ -160,29 +196,44 @@ Use `scripts/10-install-lutris.sh` — it installs the Lutris flatpak (which
 bundles a working Wine) and pins `realmlist.wtf` to `127.0.0.1` in every
 locale folder.
 
-#### Universal launcher: `scripts/wow.sh`
+#### Server launcher: `scripts/wow.sh`
 
 Run on the Deck itself (clone this repo to the Deck first, e.g.
-`~/wow-steam-deck`). It starts the server stack and launches the client:
+`~/wow-steam-deck`). It starts the server stack only — the client is launched
+separately via Steam:
 
 ```bash
 ~/wow-steam-deck/scripts/wow.sh
 ```
 
-#### Steam Gaming Mode (recommended — gives you the Steam virtual keyboard)
+The script is idempotent — re-running it does nothing if the stack is already
+up. Add it to your KDE autostart if you want the server up the moment you
+boot into Desktop Mode.
+
+#### Client via Steam (Proton)
 
 1. Desktop Mode → open Steam → **Games → Add a Non-Steam Game to My Library**.
 2. **Browse** → set the file filter to "All Files" → pick
-   `~/wow-steam-deck/scripts/wow.sh` → Add.
-3. Right-click the entry → **Properties** → rename it to "WoW 3.3.5a", set an
-   icon if you like. **Do NOT** force a Proton compat tool — `wow.sh` is a
-   Linux script that wraps Wine itself.
-4. Switch to Gaming Mode. Library → "WoW 3.3.5a" → Play.
-5. **Steam button + X** brings up the on-screen keyboard for the login.
+   `$WOW_ROOT/client/Wow.exe` → Add.
+3. Right-click the entry → **Properties** → rename it to "WoW 3.3.5a",
+   under **Compatibility** force a recent Proton (Proton Experimental works).
+4. Make sure the server is up (`scripts/wow.sh` once on the Deck).
+5. Switch to Gaming Mode. Library → "WoW 3.3.5a" → Play.
+6. **Steam button + X** brings up the on-screen keyboard for the login.
 
-> Why not add `Wow.exe` directly with Proton compat? You'd get the keyboard,
-> but Proton spawns its own prefix and you'd lose the server-start hook.
-> Wrapping `wow.sh` keeps the stack and client glued together.
+> Wow.exe under Proton sees `127.0.0.1` on the Deck so the `realmlist.wtf`
+> pinned by `10-install-lutris.sh` keeps working without modification.
+
+#### Shell aliases
+
+`scripts/setup-aliases.sh` appends short commands to `~/.bashrc` on the Deck:
+
+```bash
+wow         # start server stack (== scripts/wow.sh)
+wowstop     # stop containers
+wowstatus   # podman ps
+wowlogs     # tail worldserver log
+```
 
 ## Tuning notes (Steam Deck specific)
 
@@ -240,6 +291,11 @@ scripts/stop.sh                        # stop the stack (data persists)
 ssh $DECK_HOST 'podman logs -f ac-worldserver'
 ssh $DECK_HOST 'podman exec -it ac-worldserver worldserver'  # live console
 ```
+
+## License
+
+[MIT](LICENSE) — do whatever you want, no warranty. Note: AzerothCore and the
+modules listed below are licensed separately by their respective authors.
 
 ## Credits
 
