@@ -100,7 +100,7 @@ scripts/00-prep-deck.sh         # sudoers + podman registries + podman-compose
 scripts/01-init-workspace.sh    # дирки $WOW_ROOT/{server,client,data,db,configs,logs}
 scripts/02-clone-source.sh      # AzerothCore + 3 модуля
 scripts/03-patch-dockerfile.sh  # фикс ARG
-scripts/04-build-images.sh      # 30–60 мин на первом запуске
+scripts/04-build-images.sh      # 1–2+ часа на первом запуске
 ```
 
 ### 7. Скопируй клиент 3.3.5a на SD
