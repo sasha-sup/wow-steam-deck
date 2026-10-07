@@ -157,7 +157,7 @@ scripts/00-prep-deck.sh         # sudoers + podman registries + podman-compose
 scripts/01-init-workspace.sh    # create $WOW_ROOT/{server,client,data,db,configs,logs}
 scripts/02-clone-source.sh      # AzerothCore + mod-playerbots + mod-ah-bot + mod-individual-progression
 scripts/03-patch-dockerfile.sh  # ARG fix
-scripts/04-build-images.sh      # 30–60 min on first run
+scripts/04-build-images.sh      # 1–2+ hours on first run
 ```
 
 ### 7. Copy the WoW 3.3.5a client to the SD card
